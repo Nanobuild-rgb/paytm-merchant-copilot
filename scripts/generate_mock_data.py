@@ -55,21 +55,79 @@ TODAY = date(2026, 11, 19)
 START = TODAY - timedelta(days=30)
 
 
+# One item had a real stock-out window in the last 30 days: qty_sold is
+# forced to 0 on those days (point-of-sale genuinely couldn't sell it),
+# and stockouts.csv records it with an estimated daily demand (the mean
+# of that item's OTHER days) so the missed-sales ledger can replay it.
+STOCKOUT_WINDOWS = {"Chai Patti": (8, 10)}  # day indices into the 30-day range, inclusive
+
+
 def gen_sales():
     rows = []
     for item, cfg in ITEMS.items():
+        window = STOCKOUT_WINDOWS.get(item)
         for d in range(30):
             day = START + timedelta(days=d)
-            if cfg["avg"] == 0.0:
+            in_window = window and window[0] <= d <= window[1]
+            is_weekend = day.weekday() >= 5  # Sat/Sun
+            mult = cfg["wk"] if is_weekend else 1.0
+            noise = random.uniform(0.75, 1.25)  # always drawn, so every other item's sequence stays unchanged
+            if cfg["avg"] == 0.0 or in_window:
                 qty = 0
             else:
-                is_weekend = day.weekday() >= 5  # Sat/Sun
-                mult = cfg["wk"] if is_weekend else 1.0
-                noise = random.uniform(0.75, 1.25)
                 qty = max(0, round(cfg["avg"] * mult * noise))
             rows.append({"item": item, "date": day.isoformat(), "qty_sold": qty})
     with open(os.path.join(OUT_DIR, "sales.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["item", "date", "qty_sold"])
+        w.writeheader()
+        w.writerows(rows)
+    return rows
+
+
+def gen_stockouts(sales_rows):
+    rows_out = []
+    for item, (start_idx, end_idx) in STOCKOUT_WINDOWS.items():
+        cfg = ITEMS[item]
+        start_day = (START + timedelta(days=start_idx)).isoformat()
+        end_day = (START + timedelta(days=end_idx)).isoformat()
+        other_days = [
+            r["qty_sold"] for r in sales_rows
+            if r["item"] == item and not (start_day <= r["date"] <= end_day)
+        ]
+        est_daily_demand = round(sum(other_days) / len(other_days), 2) if other_days else 0
+        rows_out.append({
+            "item": item, "start_date": start_day, "end_date": end_day,
+            "est_daily_demand": est_daily_demand, "price_per_unit": cfg["price"], "mock": True,
+        })
+    with open(os.path.join(OUT_DIR, "stockouts.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["item", "start_date", "end_date", "est_daily_demand", "price_per_unit", "mock"])
+        w.writeheader()
+        w.writerows(rows_out)
+    return rows_out
+
+
+def gen_udhaar():
+    rows = [
+        {"customer": "Ramesh Bhai", "amount": 350, "due_date": (TODAY - timedelta(days=5)).isoformat(), "status": "overdue", "mock": True},
+        {"customer": "Sunita Ji", "amount": 220, "due_date": (TODAY - timedelta(days=10)).isoformat(), "status": "overdue", "mock": True},
+    ]
+    with open(os.path.join(OUT_DIR, "udhaar.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["customer", "amount", "due_date", "status", "mock"])
+        w.writeheader()
+        w.writerows(rows)
+    return rows
+
+
+def gen_customers():
+    rows = [
+        {"name": "Ramesh Bhai", "phone": "98XXXXXX10", "last_purchase_date": (TODAY - timedelta(days=5)).isoformat(), "total_spend_30d": 1240, "mock": True},
+        {"name": "Sunita Ji", "phone": "98XXXXXX22", "last_purchase_date": (TODAY - timedelta(days=10)).isoformat(), "total_spend_30d": 860, "mock": True},
+        {"name": "Anil Kumar", "phone": "98XXXXXX33", "last_purchase_date": (TODAY - timedelta(days=16)).isoformat(), "total_spend_30d": 0, "mock": True},
+        {"name": "Priya Devi", "phone": "98XXXXXX44", "last_purchase_date": (TODAY - timedelta(days=1)).isoformat(), "total_spend_30d": 980, "mock": True},
+        {"name": "Vikram Singh", "phone": "98XXXXXX55", "last_purchase_date": (TODAY - timedelta(days=2)).isoformat(), "total_spend_30d": 1510, "mock": True},
+    ]
+    with open(os.path.join(OUT_DIR, "customers.csv"), "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["name", "phone", "last_purchase_date", "total_spend_30d", "mock"])
         w.writeheader()
         w.writerows(rows)
     return rows
@@ -113,15 +171,24 @@ def gen_cash():
             packs = -(-need_qty // cfg["pack"])  # ceil
             total_need_cost += packs * cfg["pack"] * cfg["price"]
     available = round(total_need_cost * 0.45, -2)  # ~45% of full need, rounded to nearest 100
+    emi_due_amount = 900
+    emi_due_date = (TODAY + timedelta(days=3)).isoformat()
     with open(os.path.join(OUT_DIR, "cash.json"), "w") as f:
-        json.dump({"available_cash": available, "as_of": TODAY.isoformat()}, f, indent=2)
+        json.dump({
+            "available_cash": available, "as_of": TODAY.isoformat(),
+            "emi_due_amount": emi_due_amount, "emi_due_date": emi_due_date,
+            "mock": True,
+        }, f, indent=2)
     return total_need_cost, available
 
 
 if __name__ == "__main__":
-    gen_sales()
+    sales_rows = gen_sales()
     gen_stock()
     gen_suppliers()
+    gen_stockouts(sales_rows)
+    gen_udhaar()
+    gen_customers()
     total_need, available = gen_cash()
     print(f"Full reorder need would cost ~Rs.{total_need:.0f}; available cash funded at Rs.{available:.0f}")
-    print("Mock data written to data/")
+    print("Mock data written to data/ (all files marked mock=True where applicable)")
