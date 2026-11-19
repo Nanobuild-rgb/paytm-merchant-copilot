@@ -56,7 +56,7 @@ def get_client():
     return None
 
 
-def build_context(sales, stock, suppliers, available_cash, min_history_days=7):
+def build_context(sales, stock, suppliers, available_cash, min_history_days=7, preferred_language=None):
     plan = data_mod.build_reorder_plan(sales, stock, suppliers, available_cash, min_history_days=min_history_days)
     context = {
         "available_cash": available_cash,
@@ -72,6 +72,11 @@ def build_context(sales, stock, suppliers, available_cash, min_history_days=7):
         "data_flags": {"needs_human": plan["needs_human"], "warnings": plan["warnings"]},
         "known_items": sorted(stock.keys()),
     }
+    # "auto" (or None) means detect language from merchant_message as before;
+    # any other value is an explicit merchant preference from the UI's
+    # language picker, which the system prompt is told to honor instead.
+    if preferred_language and preferred_language != "auto":
+        context["reply_language_override"] = preferred_language
     return context, plan
 
 
@@ -248,13 +253,13 @@ def validate_and_repair(result, plan, stock):
     return result, rejections
 
 
-def process_message(merchant_message, data_dir=None, force_fallback=False):
+def process_message(merchant_message, data_dir=None, force_fallback=False, preferred_language=None):
     sales = data_mod.load_sales(os.path.join(data_dir, "sales.csv") if data_dir else None)
     stock = data_mod.load_stock(os.path.join(data_dir, "stock.csv") if data_dir else None)
     suppliers = data_mod.load_suppliers(os.path.join(data_dir, "suppliers.csv") if data_dir else None)
     cash = data_mod.load_cash(os.path.join(data_dir, "cash.json") if data_dir else None)
 
-    context, plan = build_context(sales, stock, suppliers, cash)
+    context, plan = build_context(sales, stock, suppliers, cash, preferred_language=preferred_language)
 
     client = None if force_fallback else get_client()
     used_fallback = False
