@@ -262,12 +262,41 @@ def test_hundred_skus():
            {"n_candidates": len(plan["reorder_list"]), "sorted_by_urgency": is_sorted}, ok)
 
 
+# ---------------------------------------------------------------- 17 (Munshi)
+def test_emi_larger_than_cash():
+    cash_data = {"available_cash": 500, "as_of": "2026-11-19", "emi_due_amount": 2000, "emi_due_date": "2026-11-20"}
+    reserved, usable = data_mod.compute_emi_reserve(cash_data)
+    ok = reserved == 500.0 and usable == 0.0
+    record("17. EMI larger than cash", "available=500, EMI due=2000 in 1 day",
+           "reserved=500 (capped at available), usable=0 -- never negative", {"reserved": reserved, "usable": usable}, ok)
+
+
+# ---------------------------------------------------------------- 18 (Munshi)
+def test_no_stockouts_today():
+    from core import munshi
+    ledger = munshi.missed_sales_ledger([])
+    ok = ledger["entries"] == [] and ledger["stockouts_avoided"] == 0 and ledger["est_total_recovered"] == 0.0
+    record("18. no stock-outs today", "empty stockouts list",
+           "missed_sales_ledger returns zero entries/recovered, no crash", ledger, ok)
+
+
+# ---------------------------------------------------------------- 19 (Munshi)
+def test_empty_sales():
+    stock = make_stock("Item", 5)
+    suppliers = make_suppliers("Item", 10, 5, 2)
+    plan = data_mod.build_reorder_plan([], stock, suppliers, available_cash=1000)
+    ok = plan["reorder_list"] == [] and plan["needs_human"] is True
+    record("19. empty sales history", "sales=[] (no history at all) for a stocked item",
+           "needs_human=True, item not reordered (can't compute demand), no crash", {"needs_human": plan["needs_human"], "reorder_list": plan["reorder_list"]}, ok)
+
+
 TESTS = [
     test_zero_cash, test_cash_covers_everything, test_empty_inventory, test_zero_sales_item,
     test_sales_spike, test_sales_stock_disagree, test_stock_above_need, test_two_suppliers,
     test_missing_lead_time, test_unknown_item_stock_update, test_negative_stock_update,
     test_marathi_tamil_input_no_crash, test_garbled_stt, test_unrelated_question,
     test_prompt_injection, test_hundred_skus,
+    test_emi_larger_than_cash, test_no_stockouts_today, test_empty_sales,
 ]
 
 

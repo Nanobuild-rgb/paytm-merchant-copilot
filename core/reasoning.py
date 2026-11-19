@@ -327,11 +327,14 @@ def _fallback_briefing(facts, lang="en"):
 
 
 def generate_closing_briefing(briefing_facts, preferred_language=None, force_fallback=False):
-    """Returns (spoken_briefing_text, used_fallback, rejections)."""
+    """Returns (spoken_briefing_text, used_fallback, rejections, language_code).
+    language_code is the model-reported BCP-47-ish code (e.g. "hi", "en")
+    for the text actually returned -- use it, not the UI chrome language,
+    to pick a matching TTS voice."""
     lang = preferred_language if preferred_language and preferred_language != "auto" else "en"
     client = None if force_fallback else get_client()
     if client is None:
-        return _fallback_briefing(briefing_facts, lang), True, []
+        return _fallback_briefing(briefing_facts, lang), True, [], lang
 
     context = {"requested_intent": "closing_briefing", "briefing_facts": briefing_facts}
     if preferred_language and preferred_language != "auto":
@@ -339,11 +342,12 @@ def generate_closing_briefing(briefing_facts, preferred_language=None, force_fal
     try:
         raw = call_model(client, "", context)
         text = str(raw.get("spoken_briefing") or "")
+        detected_lang = str(raw.get("language") or lang)
         if not text or not _numbers_present(text, briefing_facts.get("today_sales_total"), briefing_facts.get("usual_daily_sales_avg")):
-            return _fallback_briefing(briefing_facts, lang), False, ["model briefing missing or numbers didn't match; used deterministic fallback"]
-        return text[:800], False, []
+            return _fallback_briefing(briefing_facts, lang), False, ["model briefing missing or numbers didn't match; used deterministic fallback"], lang
+        return text[:800], False, [], detected_lang
     except Exception as exc:
-        return _fallback_briefing(briefing_facts, lang), True, [f"briefing call failed, used fallback: {exc}"]
+        return _fallback_briefing(briefing_facts, lang), True, [f"briefing call failed, used fallback: {exc}"], lang
 
 
 def generate_card_texts(approval_cards, preferred_language=None, force_fallback=False):

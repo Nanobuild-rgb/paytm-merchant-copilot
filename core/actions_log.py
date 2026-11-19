@@ -38,12 +38,15 @@ def read_actions(limit=100):
     return list(reversed(rows))[:limit]
 
 
-def approved_value_this_month():
+def approved_value_this_month(exclude_types=()):
     """Sum of estimated_impact for all "approved" actions logged (all
-    rupee figures are estimates, by construction -- never claim actuals)."""
+    rupee figures are estimates, by construction -- never claim actuals).
+    exclude_types: card_type values to leave out of the sum -- e.g.
+    "reorder" cards show a cost, not a monetary benefit, so they don't
+    belong in a "money Munshi made you" figure."""
     total = 0.0
     for r in read_actions(10_000):
-        if r["outcome"] == "approved":
+        if r["outcome"] == "approved" and r["card_type"] not in exclude_types:
             try:
                 total += float(r["estimated_impact"])
             except (TypeError, ValueError):

@@ -14,10 +14,12 @@ try:
 except (FileNotFoundError, st.errors.StreamlitAPIException):
     pass  # no secrets.toml present locally -- fine, falls back to plain env vars
 
+from core import actions_log
 from core import advisors
 from core import data as data_mod
 from core import i18n
 from core import logs
+from core import munshi
 from core import reasoning
 from core import voice
 from core import whatsapp
@@ -187,12 +189,25 @@ with st.sidebar:
     nav_button("advisors", t("nav_advisors"))
     nav_button("log", t("nav_log"))
 
+    st.markdown(
+        '<div class="kgc-sidebar-section">Munshi <span class="kgc-sidebar-new-badge">NEW</span></div>',
+        unsafe_allow_html=True,
+    )
+    nav_button("briefing", "Closing Briefing")
+    nav_button("inbox", "Approval Inbox")
+    nav_button("ledger", "Missed-Sales Ledger")
+    nav_button("concepts", "Concept Cards")
+
 sales = data_mod.load_sales()
 stock = data_mod.load_stock()
 suppliers = data_mod.load_suppliers()
-cash = data_mod.load_cash()
-plan = data_mod.build_reorder_plan(sales, stock, suppliers, cash)
+cash_data = data_mod.load_cash_full()
+emi_reserved, usable_cash = data_mod.compute_emi_reserve(cash_data)
+plan = data_mod.build_reorder_plan(sales, stock, suppliers, usable_cash)
 log_rows = logs.read_log(100)
+stockouts = data_mod.load_stockouts()
+udhaar_rows = data_mod.load_udhaar()
+customer_rows = data_mod.load_customers()
 
 # ---------------------------------------------------------------- Home (faithful Paytm-for-Business replica)
 if st.session_state.nav == "home":
@@ -250,12 +265,14 @@ elif st.session_state.nav == "copilot_home":
     n_alerts = sum(1 for c in plan["reorder_list"] + plan["deferred_items"] if c["urgency"] == "high")
     c1, c2, c3 = st.columns(3)
     with c1:
+        emi_note = (f"Rs.{emi_reserved:.0f} EMI reserved (due {cash_data.get('emi_due_date')}), Rs.{usable_cash:.0f} usable"
+                     if emi_reserved else f"{len(stock)} {t('items')}")
         st.markdown(
             f"""<div class="kgc-card kgc-card-blue">
             <div class="kgc-card-top"><div class="kgc-card-label">{t('card_cash')}</div><div class="kgc-card-icon">Rs</div></div>
-            <div class="kgc-card-value">Rs.{cash:.0f}</div>
+            <div class="kgc-card-value">Rs.{cash_data.get('available_cash', 0):.0f}</div>
             <div class="kgc-card-divider"></div>
-            <div class="kgc-card-sub">{len(stock)} {t('items')}</div>
+            <div class="kgc-card-sub">{emi_note}</div>
             </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown(
@@ -273,6 +290,18 @@ elif st.session_state.nav == "copilot_home":
             <div class="kgc-card-divider"></div>
             <div class="kgc-card-sub">{t('items')}</div>
             </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    vm = munshi.value_meter(stockouts, plan, suppliers)
+    if st.session_state.ui_lang == "hi":
+        vm_text = f"Is mahine Munshi se takreeban Rs.{vm['estimated_benefit']:.0f} ka fayda (estimated) vs plan Rs.{vm['plan_target']:.0f}."
+    else:
+        vm_text = f"This month, Munshi got you approximately Rs.{vm['estimated_benefit']:.0f} (estimated) vs a Rs.{vm['plan_target']:.0f} plan target."
+    st.markdown(
+        f'<div class="kgc-advisor-card"><div class="kgc-advisor-title">AI Value Meter</div>{vm_text}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption("Computed only from actions you've Approved in the Approval Inbox. Figures are estimates, not actuals.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button(t("go_to_order"), type="primary"):
@@ -304,6 +333,36 @@ elif st.session_state.nav == "order":
     merchant_message = st.text_area(
         t("text_label"), value=transcript_from_voice or "", placeholder=t("example_text"), height=80,
     )
+
+    with st.expander("Zero-entry stock: shelf photo (Munshi)"):
+        st.caption("Upload a shelf photo for a stock estimate -- you must confirm it before anything changes.")
+        shelf_photo = st.file_uploader("Shelf photo", type=["jpg", "jpeg", "png"], key="shelf_photo_uploader")
+        if shelf_photo is not None and st.button("Read photo"):
+            with st.spinner("..."):
+                proposals, needs_human_photo, rej = reasoning.read_shelf_photo(
+                    shelf_photo.getvalue(), sorted(stock.keys()), mime_type=shelf_photo.type or "image/jpeg",
+                )
+            st.session_state.shelf_proposals = proposals
+            st.session_state.shelf_needs_human = needs_human_photo
+        if st.session_state.get("shelf_proposals"):
+            if st.session_state.get("shelf_needs_human"):
+                st.warning("Munshi isn't fully sure about this photo -- please check the estimates below.")
+            for p in st.session_state.shelf_proposals:
+                st.write(f"- {p['item']}: ~{p['estimated_qty']:.0f} {stock.get(p['item'], {}).get('unit', '')} (confidence {p['confidence']:.0%})")
+            if st.button("Confirm and update stock", type="primary"):
+                # A shelf photo shows an ABSOLUTE count on the shelf, not a delta --
+                # convert to a change relative to current stock so it SETS, not adds.
+                changes = [
+                    {"item": p["item"], "change": p["estimated_qty"] - stock[p["item"]]["current_stock"]}
+                    for p in st.session_state.shelf_proposals if p["item"] in stock
+                ]
+                new_stock, applied, rejected = data_mod.apply_stock_changes(stock, changes)
+                if applied:
+                    data_mod.save_stock(new_stock)
+                    st.success(f"Stock updated for: {', '.join(a['item'] for a in applied)}.")
+                if rejected:
+                    st.warning(f"Could not apply: {rejected}")
+                st.session_state.shelf_proposals = None
 
     col_a, col_b = st.columns([1, 1])
     with col_a:
@@ -437,3 +496,146 @@ elif st.session_state.nav == "log":
         st.dataframe(log_rows, width="stretch", hide_index=True)
     else:
         st.caption(t("no_log"))
+
+    st.markdown("---")
+    st.subheader("Munshi Actions Log (Approve / Later / Reject)")
+    action_rows = actions_log.read_actions(100)
+    if action_rows:
+        st.dataframe(action_rows, width="stretch", hide_index=True)
+    else:
+        st.caption("No Munshi actions logged yet.")
+
+# ---------------------------------------------------------------- Closing Briefing
+elif st.session_state.nav == "briefing":
+    st.subheader("Closing Briefing")
+    st.caption('"Shop band karo" -- a ~20-second spoken summary of today, plus your top 3 actions.')
+
+    if st.button("Shop band karo", type="primary"):
+        # Mock data has no literal "today" row (it covers the 30 days up to
+        # and including yesterday) -- Munshi briefs on the close of the most
+        # recent recorded business day, not an empty, not-yet-happened one.
+        price_by_item = {
+            item: data_mod.cheapest_supplier(sup_list)["price_per_unit"]
+            for item, sup_list in suppliers.items() if sup_list
+        }
+        all_days = sorted({r["date"] for r in sales})
+        today_str = all_days[-1] if all_days else date.today().isoformat()
+        prior_days = all_days[-8:-1] if len(all_days) >= 8 else all_days[:-1]
+        today_sales_total = sum(r["qty_sold"] * price_by_item.get(r["item"], 0) for r in sales if r["date"] == today_str)
+        usual_avg = (
+            sum(r["qty_sold"] * price_by_item.get(r["item"], 0) for r in sales if r["date"] in prior_days) / max(1, len(prior_days))
+            if prior_days else 0
+        )
+        ledger = munshi.missed_sales_ledger(stockouts)
+        missed_line = ""
+        if ledger["entries"]:
+            e = ledger["entries"][0]
+            missed_line = (
+                f"{e['item']} out of stock for {e['days_out_of_stock']} days, "
+                f"an estimated Rs.{e['est_lost_revenue']:.0f} in lost sales."
+            )
+        cards = munshi.build_approval_cards(plan, suppliers, udhaar_rows, customer_rows, st.session_state.ui_lang)
+        top3 = cards[:3]
+        briefing_facts = {
+            "today_sales_total": round(today_sales_total, 2),
+            "usual_daily_sales_avg": round(usual_avg, 2),
+            "missed_sales_line": missed_line,
+            "top_cards": [{"title": c["title"], "reason": c["computed_reason"], "estimated_impact": c["estimated_impact"]} for c in top3],
+        }
+        text, used_fb, rej, detected_lang = reasoning.generate_closing_briefing(briefing_facts, preferred_language=st.session_state.reply_lang)
+        st.session_state.briefing_text = text
+        st.session_state.briefing_fallback = used_fb
+        if sarvam_ok:
+            st.session_state.briefing_audio = voice.text_to_speech(text, detected_lang)
+        else:
+            st.session_state.briefing_audio = None
+
+    if st.session_state.get("briefing_text"):
+        if st.session_state.get("briefing_fallback"):
+            st.caption("Offline/fallback mode: deterministic summary shown below (text is always the fallback, even if voice fails).")
+        st.markdown(f"**{st.session_state.briefing_text}**")
+        if st.session_state.get("briefing_audio"):
+            st.audio(st.session_state.briefing_audio, format="audio/wav")
+        else:
+            st.caption("(Voice unavailable -- text above is the always-visible fallback.)")
+
+# ---------------------------------------------------------------- Approval Inbox
+elif st.session_state.nav == "inbox":
+    st.subheader("Approval Inbox")
+    st.caption("Every card is data-based. Approve / Later / Reject -- nothing is sent automatically.")
+
+    cards = munshi.build_approval_cards(plan, suppliers, udhaar_rows, customer_rows, st.session_state.ui_lang)
+    if not cards:
+        st.caption("No action cards right now.")
+    card_ids = [c["id"] for c in cards]
+    if st.session_state.get("inbox_card_ids") != card_ids:
+        texts, used_fb, rej = reasoning.generate_card_texts(cards, preferred_language=st.session_state.reply_lang)
+        st.session_state.inbox_card_ids = card_ids
+        st.session_state.inbox_texts = texts
+
+    for c in cards:
+        phrased = st.session_state.get("inbox_texts", {}).get(c["id"], c["computed_reason"])
+        st.markdown(
+            f'<div class="kgc-advisor-card"><div class="kgc-advisor-title">{c["title"]}</div>'
+            f'{phrased}<br><small>Estimated impact: Rs.{c["estimated_impact"]:.0f} (estimated)</small></div>',
+            unsafe_allow_html=True,
+        )
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("Approve", key=f"approve_{c['id']}", type="primary", width="stretch"):
+                actions_log.log_action(c["kind"], c["title"], c["estimated_impact"], "approved")
+                if c["kind"] in ("udhaar", "repeat_customer", "dead_stock"):
+                    link = whatsapp.build_wa_link("", phrased)
+                    st.markdown(f"[Open WhatsApp]({link})")
+                st.success("Approved and logged.")
+        with col2:
+            if st.button("Later", key=f"later_{c['id']}", width="stretch"):
+                actions_log.log_action(c["kind"], c["title"], c["estimated_impact"], "later")
+                st.info("Saved for later.")
+        with col3:
+            if st.button("Reject", key=f"reject_{c['id']}", width="stretch"):
+                actions_log.log_action(c["kind"], c["title"], c["estimated_impact"], "rejected")
+                st.info("Rejected and logged.")
+
+# ---------------------------------------------------------------- Missed-Sales Ledger
+elif st.session_state.nav == "ledger":
+    st.subheader("Missed-Sales Ledger (estimated)")
+    st.caption("Replays the last 30 days: stock-outs avoided and rupees recovered IF the reorder advice had been followed. All figures are estimated.")
+    ledger = munshi.missed_sales_ledger(stockouts)
+    st.metric("Stock-outs in the last 30 days", ledger["stockouts_avoided"])
+    st.metric("Estimated rupees recoverable", f"Rs.{ledger['est_total_recovered']:.0f}")
+    if ledger["entries"]:
+        st.dataframe(ledger["entries"], width="stretch", hide_index=True)
+    else:
+        st.caption("No recorded stock-out windows in the last 30 days.")
+
+# ---------------------------------------------------------------- Concept Cards (Tier 3, mock UI only)
+elif st.session_state.nav == "concepts":
+    st.subheader("Concept Cards")
+    st.caption("These are mock/concept UI only -- not real financial products or integrations.")
+
+    emi_amount = cash_data.get("emi_due_amount", 0)
+    emi_date_str = cash_data.get("emi_due_date", "")
+    st.markdown(
+        f'<div class="kgc-advisor-card"><div class="kgc-advisor-title">EMI-safe planning <span class="kgc-sidebar-new-badge">Concept</span></div>'
+        f"Shukravar ko EMI Rs.{emi_amount:.0f} hai ({emi_date_str}), pehle alag rakh diya. "
+        f"Reorder budget ab Rs.{usable_cash:.0f} hai, Rs.{cash_data.get('available_cash', 0):.0f} mein se.</div>",
+        unsafe_allow_html=True,
+    )
+
+    if usable_cash < 500:
+        st.markdown(
+            '<div class="kgc-advisor-card"><div class="kgc-advisor-title">Cash-short? <span class="kgc-sidebar-new-badge">Concept</span></div>'
+            "Short-term credit Paytm ke lending partners se mil sakta hai (concept). "
+            "No rates or eligibility shown here -- concept only.</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="kgc-advisor-card"><div class="kgc-advisor-title">Pay supplier by UPI <span class="kgc-sidebar-new-badge">Concept</span></div>'
+                "Approve and pay a supplier directly -- mock confirmation only, no real payment is sent.</div>", unsafe_allow_html=True)
+    if plan["reorder_list"]:
+        top = plan["reorder_list"][0]
+        if st.button(f"Approve and pay {top['supplier']} Rs.{top['cost']:.0f} (mock)", type="primary"):
+            st.success(f"Mock confirmation: Rs.{top['cost']:.0f} 'paid' to {top['supplier']} via UPI. (Concept -- no real payment was sent.)")
+    else:
+        st.caption("No reorder item to demo this concept card against right now.")

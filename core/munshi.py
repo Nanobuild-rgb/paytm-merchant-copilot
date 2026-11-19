@@ -44,8 +44,42 @@ def value_meter(stockout_rows, plan, suppliers):
         for d in plan["dead_stock_items"]
     )
     plan_target = round(ledger["est_total_recovered"] + dead_value, 2)
-    actual = actions_log.approved_value_this_month()
+    actual = actions_log.approved_value_this_month(exclude_types=("reorder",))
     return {"estimated_benefit": actual, "plan_target": plan_target}
+
+
+def build_approval_cards(plan, suppliers, udhaar_rows, customers_rows, lang="en", max_reorder=3, today=None):
+    """One unified list of approval-inbox cards across all kinds, each
+    with a deterministic id/title/computed_reason/estimated_impact.
+    Reorder cards' estimated_impact is the cost to spend (an outflow, not
+    a "benefit") -- the Value Meter excludes "reorder" cards from its sum
+    for that reason; dead_stock/udhaar/repeat_customer impacts ARE a
+    monetary benefit when approved."""
+    cards = []
+    for c in plan["reorder_list"][:max_reorder]:
+        reason = (f"Sirf {c['days_left']} din ka stock bacha hai" if lang == "hi" else f"Only {c['days_left']} days of stock left")
+        cards.append({
+            "id": f"reorder_{c['item']}", "kind": "reorder", "title": f"Reorder {c['item']}",
+            "computed_reason": reason, "estimated_impact": c["cost"],
+        })
+    for d in dead_stock_drafts(plan, suppliers, lang):
+        cards.append({
+            "id": f"dead_stock_{d['item']}", "kind": "dead_stock", "title": f"Clear dead stock: {d['item']}",
+            "computed_reason": d["text"], "estimated_impact": d["value"],
+        })
+    for u in udhaar_reminders(udhaar_rows, lang):
+        cards.append({
+            "id": f"udhaar_{u['customer'].replace(' ', '_')}", "kind": "udhaar",
+            "title": f"Udhaar reminder: {u['customer']}",
+            "computed_reason": u["text"], "estimated_impact": u["amount"],
+        })
+    for r in repeat_customer_nudges(customers_rows, lang, today=today):
+        cards.append({
+            "id": f"repeat_{r['customer'].replace(' ', '_')}", "kind": "repeat_customer",
+            "title": f"Bring back: {r['customer']}",
+            "computed_reason": r["text"], "estimated_impact": 0,
+        })
+    return cards
 
 
 def dead_stock_drafts(plan, suppliers, lang="en"):
