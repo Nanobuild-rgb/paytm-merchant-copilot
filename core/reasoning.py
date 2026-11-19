@@ -12,7 +12,7 @@ import os
 
 from core import data as data_mod
 
-PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "v1.md")
+PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "v2.md")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
@@ -56,7 +56,7 @@ def get_client():
     return None
 
 
-def build_context(sales, stock, suppliers, available_cash, min_history_days=7, preferred_language=None):
+def build_context(sales, stock, suppliers, available_cash, min_history_days=7, preferred_language=None, emi_info=None):
     plan = data_mod.build_reorder_plan(sales, stock, suppliers, available_cash, min_history_days=min_history_days)
     context = {
         "available_cash": available_cash,
@@ -72,6 +72,11 @@ def build_context(sales, stock, suppliers, available_cash, min_history_days=7, p
         "data_flags": {"needs_human": plan["needs_human"], "warnings": plan["warnings"]},
         "known_items": sorted(stock.keys()),
     }
+    if emi_info:
+        context["cash_full"] = {
+            "usable_after_emi": available_cash, "emi_reserved": emi_info.get("reserved", 0),
+            "emi_due_date": emi_info.get("emi_due_date"),
+        }
     # "auto" (or None) means detect language from merchant_message as before;
     # any other value is an explicit merchant preference from the UI's
     # language picker, which the system prompt is told to honor instead.
@@ -257,9 +262,13 @@ def process_message(merchant_message, data_dir=None, force_fallback=False, prefe
     sales = data_mod.load_sales(os.path.join(data_dir, "sales.csv") if data_dir else None)
     stock = data_mod.load_stock(os.path.join(data_dir, "stock.csv") if data_dir else None)
     suppliers = data_mod.load_suppliers(os.path.join(data_dir, "suppliers.csv") if data_dir else None)
-    cash = data_mod.load_cash(os.path.join(data_dir, "cash.json") if data_dir else None)
+    cash_data = data_mod.load_cash_full(os.path.join(data_dir, "cash.json") if data_dir else None)
+    reserved, usable_cash = data_mod.compute_emi_reserve(cash_data)
 
-    context, plan = build_context(sales, stock, suppliers, cash, preferred_language=preferred_language)
+    context, plan = build_context(
+        sales, stock, suppliers, usable_cash, preferred_language=preferred_language,
+        emi_info={"reserved": reserved, "emi_due_date": cash_data.get("emi_due_date")},
+    )
 
     client = None if force_fallback else get_client()
     used_fallback = False
@@ -282,3 +291,139 @@ def process_message(merchant_message, data_dir=None, force_fallback=False, prefe
         data_mod.save_stock(new_stock, os.path.join(data_dir, "stock.csv") if data_dir else None)
 
     return {"result": result, "plan": plan, "rejections": rejections, "used_fallback": used_fallback}
+
+
+def _numbers_present(text, *values):
+    """Light anti-invention check: every given number must literally
+    appear in the text (commas stripped). If not, we don't trust the
+    phrasing and fall back to a deterministic template instead."""
+    cleaned = (text or "").replace(",", "")
+    for v in values:
+        if v is None:
+            continue
+        if str(int(round(v))) not in cleaned:
+            return False
+    return True
+
+
+def _fallback_briefing(facts, lang="en"):
+    today = facts.get("today_sales_total", 0)
+    usual = facts.get("usual_daily_sales_avg", 0)
+    missed = facts.get("missed_sales_line", "")
+    titles = [c["title"] for c in facts.get("top_cards", [])]
+    if lang == "hi":
+        parts = [f"Aaj ki bikri Rs.{today:.0f} rahi, usual Rs.{usual:.0f} ke मुकाबले."]
+        if missed:
+            parts.append(missed)
+        if titles:
+            parts.append("Teen kaam: " + ", ".join(titles) + ".")
+    else:
+        parts = [f"Today's sales were Rs.{today:.0f}, versus the usual Rs.{usual:.0f}."]
+        if missed:
+            parts.append(missed)
+        if titles:
+            parts.append("Three things to do: " + ", ".join(titles) + ".")
+    return " ".join(parts)
+
+
+def generate_closing_briefing(briefing_facts, preferred_language=None, force_fallback=False):
+    """Returns (spoken_briefing_text, used_fallback, rejections)."""
+    lang = preferred_language if preferred_language and preferred_language != "auto" else "en"
+    client = None if force_fallback else get_client()
+    if client is None:
+        return _fallback_briefing(briefing_facts, lang), True, []
+
+    context = {"requested_intent": "closing_briefing", "briefing_facts": briefing_facts}
+    if preferred_language and preferred_language != "auto":
+        context["reply_language_override"] = preferred_language
+    try:
+        raw = call_model(client, "", context)
+        text = str(raw.get("spoken_briefing") or "")
+        if not text or not _numbers_present(text, briefing_facts.get("today_sales_total"), briefing_facts.get("usual_daily_sales_avg")):
+            return _fallback_briefing(briefing_facts, lang), False, ["model briefing missing or numbers didn't match; used deterministic fallback"]
+        return text[:800], False, []
+    except Exception as exc:
+        return _fallback_briefing(briefing_facts, lang), True, [f"briefing call failed, used fallback: {exc}"]
+
+
+def generate_card_texts(approval_cards, preferred_language=None, force_fallback=False):
+    """approval_cards: list of {id, kind, computed_reason, estimated_impact}.
+    Returns (dict id->text, used_fallback, rejections). Always falls back
+    to the deterministic computed_reason per card on any failure/mismatch."""
+    fallback_texts = {c["id"]: c["computed_reason"] for c in approval_cards}
+    if not approval_cards:
+        return {}, True, []
+    client = None if force_fallback else get_client()
+    if client is None:
+        return fallback_texts, True, []
+
+    context = {"requested_intent": "card_phrasing", "approval_cards": approval_cards}
+    if preferred_language and preferred_language != "auto":
+        context["reply_language_override"] = preferred_language
+    try:
+        raw = call_model(client, "", context)
+        valid_ids = {c["id"] for c in approval_cards}
+        texts = dict(fallback_texts)
+        rejections = []
+        for entry in raw.get("card_texts") or []:
+            cid = entry.get("id")
+            if cid in valid_ids and entry.get("text"):
+                texts[cid] = str(entry["text"])[:150]
+            else:
+                rejections.append(f"card_texts entry with unknown id '{cid}' ignored")
+        return texts, False, rejections
+    except Exception as exc:
+        return fallback_texts, True, [f"card phrasing call failed, used fallback: {exc}"]
+
+
+def read_shelf_photo(image_bytes, known_items, mime_type="image/jpeg", force_fallback=False):
+    """Vision read of a shelf photo -> a *proposal* list the merchant must
+    confirm before any stock change is applied (never auto-applied).
+    Returns (proposals, needs_human, rejections). proposals: list of
+    {item, estimated_qty, confidence}, item always one of known_items.
+    """
+    provider = get_provider()
+    client = None if force_fallback else get_client()
+    if client is None or provider != "gemini":
+        return [], True, ["vision read unavailable: no Gemini key configured, or provider doesn't support it here"]
+
+    prompt = (
+        "You are reading a shelf/stock photo for a kirana shop. Known item names: "
+        + json.dumps(sorted(known_items), ensure_ascii=False)
+        + ". Reply with ONLY a JSON object: "
+        '{"items": [{"item": "<one of the known item names>", "estimated_qty": <number>, "confidence": <0-1>}], '
+        '"needs_human": <bool>, "notes": "<short note if unsure or nothing recognizable>"}. '
+        "Only include items you can actually see and that match a known item name (fuzzy match ok, e.g. "
+        '"Parle G" -> the closest known name). Never invent an item not in the known list. '
+        "If you can't confidently read the photo, set needs_human true and leave items empty."
+    )
+    try:
+        from google.genai import types
+        resp = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), prompt],
+            config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=500, response_mime_type="application/json"),
+        )
+        raw = _extract_json(resp.text)
+    except Exception as exc:
+        return [], True, [f"shelf photo read failed: {exc}"]
+
+    known_set = set(known_items)
+    proposals = []
+    rejections = []
+    for entry in raw.get("items") or []:
+        item = entry.get("item")
+        if item not in known_set:
+            rejections.append(f"model proposed unknown item '{item}'; dropped")
+            continue
+        try:
+            qty = float(entry.get("estimated_qty"))
+        except (TypeError, ValueError):
+            rejections.append(f"non-numeric estimated_qty for '{item}'; dropped")
+            continue
+        proposals.append({
+            "item": item, "estimated_qty": qty,
+            "confidence": max(0.0, min(1.0, float(entry.get("confidence") or 0))),
+        })
+    needs_human = bool(raw.get("needs_human")) or not proposals
+    return proposals, needs_human, rejections
