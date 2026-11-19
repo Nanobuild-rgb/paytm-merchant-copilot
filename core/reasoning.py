@@ -1,5 +1,6 @@
-"""Calls Claude to turn pre-computed facts into natural-language output,
-then validates/repairs the JSON against the deterministic truth in Python.
+"""Calls an LLM (Claude, or Gemini if that's the key available) to turn
+pre-computed facts into natural-language output, then validates/repairs
+the JSON against the deterministic truth in Python.
 
 The model is never trusted with arithmetic. Every numeric field in the
 final output is either copied straight from core.data's computation or
@@ -13,6 +14,7 @@ from core import data as data_mod
 
 PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "v1.md")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
 REQUIRED_KEYS = [
     "intent", "language", "spoken_summary", "stock_changes", "reorder_list",
@@ -26,15 +28,32 @@ def load_system_prompt():
         return f.read()
 
 
+def get_provider():
+    """Claude is the spec'd default; Gemini is used instead if that's the
+    key actually available. Never both -- whichever key is set wins,
+    Claude taking priority if both happen to be set."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    if os.environ.get("GEMINI_API_KEY"):
+        return "gemini"
+    return None
+
+
 def get_client():
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        return None
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    return anthropic.Anthropic(api_key=key)
+    provider = get_provider()
+    if provider == "anthropic":
+        try:
+            import anthropic
+        except ImportError:
+            return None
+        return anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    if provider == "gemini":
+        try:
+            from google import genai
+        except ImportError:
+            return None
+        return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    return None
 
 
 def build_context(sales, stock, suppliers, available_cash, min_history_days=7):
@@ -72,15 +91,34 @@ def _extract_json(raw_text):
 def call_model(client, merchant_message, context):
     system_prompt = load_system_prompt()
     user_payload = json.dumps({"merchant_message": merchant_message, "context": context}, ensure_ascii=False)
-    resp = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=800,
-        temperature=0.2,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_payload}],
-    )
-    raw_text = "".join(block.text for block in resp.content if getattr(block, "type", None) == "text")
-    return _extract_json(raw_text)
+    provider = get_provider()
+
+    if provider == "anthropic":
+        resp = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=800,
+            temperature=0.2,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_payload}],
+        )
+        raw_text = "".join(block.text for block in resp.content if getattr(block, "type", None) == "text")
+        return _extract_json(raw_text)
+
+    if provider == "gemini":
+        from google.genai import types
+        resp = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=user_payload,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                temperature=0.2,
+                max_output_tokens=800,
+                response_mime_type="application/json",
+            ),
+        )
+        return _extract_json(resp.text)
+
+    raise RuntimeError("no LLM provider configured")
 
 
 def fallback_template(merchant_message, context, plan):

@@ -53,15 +53,24 @@ answer instead of crashing or faking a live integration.
 
 | Variable | Required for | If unset |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Claude reasoning (intent, language, phrasing) | Falls back to a deterministic, code-generated answer in English |
+| `ANTHROPIC_API_KEY` | Claude reasoning (intent, language, phrasing) | Falls back to `GEMINI_API_KEY` if set, else the code-generated fallback answer |
+| `GEMINI_API_KEY` | Gemini reasoning, used instead of Claude if that's the key available | Same fallback as above |
 | `SARVAM_API_KEY` | Sarvam speech-to-text / text-to-speech | Mic input is hidden; app is typed-input / text-output only |
-| `CLAUDE_MODEL` | override model id | defaults to `claude-sonnet-5-5` |
+| `CLAUDE_MODEL` | override Claude model id | defaults to `claude-sonnet-5-5` |
+| `GEMINI_MODEL` | override Gemini model id | defaults to `gemini-3.1-flash-lite` |
 | `SARVAM_STT_MODEL` / `SARVAM_TTS_MODEL` | override Sarvam model ids | default to `saaras:v4` / `bulbul:v3` |
+
+`core/reasoning.get_provider()` picks Claude if `ANTHROPIC_API_KEY` is set,
+otherwise Gemini if `GEMINI_API_KEY` is set, otherwise the deterministic
+fallback. The spec'd default is Claude; this app is currently running on
+Gemini because that's the key that was available at build time — same
+prompt (`prompts/v1.md`), same validation/repair layer, same safety
+guarantees either way.
 
 On Streamlit Community Cloud: app → Settings → Secrets, paste as TOML:
 
 ```toml
-ANTHROPIC_API_KEY = "sk-ant-..."
+GEMINI_API_KEY = "..."
 SARVAM_API_KEY = "..."
 ```
 
@@ -69,8 +78,8 @@ SARVAM_API_KEY = "..."
 
 Visit `?health=1` on the app URL (e.g.
 `https://paytm-merchant-copilot.streamlit.app/?health=1`) to see whether
-`ANTHROPIC_API_KEY` and `SARVAM_API_KEY` are set, without ever revealing
-their values.
+`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `SARVAM_API_KEY` are set, and
+which reasoning provider is active — without ever revealing the values.
 
 ## Project layout
 
@@ -129,8 +138,9 @@ code-computed plan, which by construction never exceeds `available_cash`).
 
 - No login, no real Paytm APIs, single shop, no multi-supplier price
   comparison, no festival alerts — out of scope per the hackathon brief.
-- Without `ANTHROPIC_API_KEY`, the app cannot do natural-language intent
-  classification (e.g. it can't tell "GST kitni hai?" from a reorder
-  question) — it always shows the reorder plan in English. This is an
-  honest fallback, not a faked integration; the offline banner says so.
+- Without a Claude or Gemini key, the app cannot do natural-language
+  intent classification (e.g. it can't tell "GST kitni hai?" from a
+  reorder question) — it always shows the reorder plan in English. This
+  is an honest fallback, not a faked integration; the offline banner
+  says so.
 - Voice requires `SARVAM_API_KEY`; without it the app is typed-input only.

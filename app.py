@@ -5,6 +5,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import streamlit as st
 
+try:
+    for _k in ("ANTHROPIC_API_KEY", "SARVAM_API_KEY", "CLAUDE_MODEL", "SARVAM_STT_MODEL", "SARVAM_TTS_MODEL"):
+        if _k in st.secrets and not os.environ.get(_k):
+            os.environ[_k] = st.secrets[_k]
+except (FileNotFoundError, st.errors.StreamlitAPIException):
+    pass  # no secrets.toml present locally -- fine, falls back to plain env vars
+
 from core import data as data_mod
 from core import logs
 from core import reasoning
@@ -13,15 +20,18 @@ from core import whatsapp
 
 st.set_page_config(page_title="Kirana Reorder Copilot", layout="centered")
 
-claude_ok = bool(os.environ.get("ANTHROPIC_API_KEY"))
+reasoning_provider = reasoning.get_provider()
+reasoning_ok = reasoning_provider is not None
 sarvam_ok = voice.has_key()
 
 query_params = st.query_params
 if query_params.get("health") is not None:
     st.json({
         "status": "ok",
-        "claude_api_key_set": claude_ok,
+        "claude_api_key_set": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "gemini_api_key_set": bool(os.environ.get("GEMINI_API_KEY")),
         "sarvam_api_key_set": sarvam_ok,
+        "active_reasoning_provider": reasoning_provider,
     })
     st.stop()
 
@@ -42,7 +52,7 @@ st.markdown(
 st.title("Kirana Reorder Copilot")
 st.caption("Dukaan ke liye awaaz se order planning — Hindi/Hinglish mein bolo ya likho.")
 st.caption(
-    f"Claude: {'ready' if claude_ok else 'not set (fallback mode)'}  |  "
+    f"Reasoning: {'ready (' + reasoning_provider + ')' if reasoning_ok else 'not set (fallback mode)'}  |  "
     f"Sarvam voice: {'ready' if sarvam_ok else 'not set (type instead)'}"
 )
 
@@ -111,7 +121,7 @@ with tab_order:
     if result:
         st.markdown("---")
         if st.session_state.used_fallback:
-            st.caption("Offline mode: Claude key nahi mila, seedha data se jawaab.")
+            st.caption("Offline mode: reasoning key nahi mila, seedha data se jawaab.")
         if result.get("needs_human"):
             st.warning("Data adhoora ya ulajhan mein hai — kripya khud check karein.")
 
