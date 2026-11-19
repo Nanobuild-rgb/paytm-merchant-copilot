@@ -56,10 +56,85 @@ def load_suppliers(path=None):
     return dict(suppliers)
 
 
+def load_stockouts(path=None):
+    path = path or os.path.join(DATA_DIR, "stockouts.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return [
+            {
+                "item": r["item"], "start_date": r["start_date"], "end_date": r["end_date"],
+                "est_daily_demand": float(r["est_daily_demand"]), "price_per_unit": float(r["price_per_unit"]),
+            }
+            for r in csv.DictReader(f)
+        ]
+
+
+def load_udhaar(path=None):
+    path = path or os.path.join(DATA_DIR, "udhaar.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return [
+            {"customer": r["customer"], "amount": float(r["amount"]), "due_date": r["due_date"], "status": r["status"]}
+            for r in csv.DictReader(f)
+        ]
+
+
+def load_customers(path=None):
+    path = path or os.path.join(DATA_DIR, "customers.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return [
+            {"name": r["name"], "phone": r["phone"], "last_purchase_date": r["last_purchase_date"],
+             "total_spend_30d": float(r["total_spend_30d"])}
+            for r in csv.DictReader(f)
+        ]
+
+
 def load_cash(path=None):
     path = path or os.path.join(DATA_DIR, "cash.json")
     with open(path) as f:
         return float(json.load(f)["available_cash"])
+
+
+def load_cash_full(path=None):
+    """Full cash.json dict (available_cash, as_of, emi_due_amount, emi_due_date)."""
+    path = path or os.path.join(DATA_DIR, "cash.json")
+    with open(path) as f:
+        return json.load(f)
+
+
+def compute_emi_reserve(cash_data, today=None, window_days=7):
+    """Set aside the EMI only if it's due within `window_days` -- otherwise
+    today's reorder decision doesn't need to worry about it yet.
+
+    Returns (reserved_amount, usable_cash). usable_cash is never negative;
+    if the EMI exceeds available cash, the whole available amount is
+    reserved and usable_cash is 0 (nothing left to reorder with).
+    """
+    from datetime import date as _date
+
+    available = float(cash_data.get("available_cash", 0) or 0)
+    emi_amount = float(cash_data.get("emi_due_amount", 0) or 0)
+    emi_date_str = cash_data.get("emi_due_date")
+
+    if today is None:
+        as_of = cash_data.get("as_of")
+        today = _date.fromisoformat(as_of) if as_of else _date.today()
+    elif isinstance(today, str):
+        today = _date.fromisoformat(today)
+
+    if not emi_amount or not emi_date_str:
+        return 0.0, round(available, 2)
+
+    emi_date = _date.fromisoformat(emi_date_str)
+    days_until = (emi_date - today).days
+    if 0 <= days_until <= window_days:
+        reserved = min(emi_amount, available)
+        return round(reserved, 2), round(max(0.0, available - reserved), 2)
+    return 0.0, round(available, 2)
 
 
 def avg_daily_sales(sales_rows, item):
