@@ -1,0 +1,601 @@
+item,date,qty_sold
+Atta,2026-10-20,9
+Atta,2026-10-21,6
+Atta,2026-10-22,7
+Atta,2026-10-23,7
+Atta,2026-10-24,9
+Atta,2026-10-25,9
+Atta,2026-10-26,10
+Atta,2026-10-27,6
+Atta,2026-10-28,8
+Atta,2026-10-29,6
+Atta,2026-10-30,7
+Atta,2026-10-31,8
+Atta,2026-11-01,6
+Atta,2026-11-02,7
+Atta,2026-11-03,9
+Atta,2026-11-04,8
+Atta,2026-11-05,7
+Atta,2026-11-06,8
+Atta,2026-11-07,9
+Atta,2026-11-08,6
+Atta,2026-11-09,9
+Atta,2026-11-10,9
+Atta,2026-11-11,7
+Atta,2026-11-12,7
+Atta,2026-11-13,10
+Atta,2026-11-14,7
+Atta,2026-11-15,6
+Atta,2026-11-16,6
+Atta,2026-11-17,9
+Atta,2026-11-18,8
+Chini,2026-10-20,6
+Chini,2026-10-21,6
+Chini,2026-10-22,5
+Chini,2026-10-23,6
+Chini,2026-10-24,5
+Chini,2026-10-25,5
+Chini,2026-10-26,6
+Chini,2026-10-27,5
+Chini,2026-10-28,6
+Chini,2026-10-29,5
+Chini,2026-10-30,6
+Chini,2026-10-31,4
+Chini,2026-11-01,4
+Chini,2026-11-02,4
+Chini,2026-11-03,4
+Chini,2026-11-04,4
+Chini,2026-11-05,4
+Chini,2026-11-06,4
+Chini,2026-11-07,5
+Chini,2026-11-08,5
+Chini,2026-11-09,5
+Chini,2026-11-10,4
+Chini,2026-11-11,4
+Chini,2026-11-12,6
+Chini,2026-11-13,5
+Chini,2026-11-14,5
+Chini,2026-11-15,4
+Chini,2026-11-16,6
+Chini,2026-11-17,4
+Chini,2026-11-18,5
+Chawal,2026-10-20,7
+Chawal,2026-10-21,6
+Chawal,2026-10-22,6
+Chawal,2026-10-23,7
+Chawal,2026-10-24,7
+Chawal,2026-10-25,7
+Chawal,2026-10-26,5
+Chawal,2026-10-27,5
+Chawal,2026-10-28,5
+Chawal,2026-10-29,5
+Chawal,2026-10-30,5
+Chawal,2026-10-31,7
+Chawal,2026-11-01,7
+Chawal,2026-11-02,5
+Chawal,2026-11-03,6
+Chawal,2026-11-04,6
+Chawal,2026-11-05,7
+Chawal,2026-11-06,6
+Chawal,2026-11-07,5
+Chawal,2026-11-08,5
+Chawal,2026-11-09,6
+Chawal,2026-11-10,5
+Chawal,2026-11-11,6
+Chawal,2026-11-12,7
+Chawal,2026-11-13,6
+Chawal,2026-11-14,5
+Chawal,2026-11-15,7
+Chawal,2026-11-16,6
+Chawal,2026-11-17,5
+Chawal,2026-11-18,5
+Toor Dal,2026-10-20,2
+Toor Dal,2026-10-21,3
+Toor Dal,2026-10-22,3
+Toor Dal,2026-10-23,3
+Toor Dal,2026-10-24,2
+Toor Dal,2026-10-25,3
+Toor Dal,2026-10-26,4
+Toor Dal,2026-10-27,3
+Toor Dal,2026-10-28,4
+Toor Dal,2026-10-29,4
+Toor Dal,2026-10-30,2
+Toor Dal,2026-10-31,3
+Toor Dal,2026-11-01,3
+Toor Dal,2026-11-02,3
+Toor Dal,2026-11-03,3
+Toor Dal,2026-11-04,3
+Toor Dal,2026-11-05,2
+Toor Dal,2026-11-06,3
+Toor Dal,2026-11-07,3
+Toor Dal,2026-11-08,4
+Toor Dal,2026-11-09,4
+Toor Dal,2026-11-10,3
+Toor Dal,2026-11-11,3
+Toor Dal,2026-11-12,3
+Toor Dal,2026-11-13,4
+Toor Dal,2026-11-14,4
+Toor Dal,2026-11-15,3
+Toor Dal,2026-11-16,3
+Toor Dal,2026-11-17,3
+Toor Dal,2026-11-18,2
+Chana Dal,2026-10-20,2
+Chana Dal,2026-10-21,2
+Chana Dal,2026-10-22,2
+Chana Dal,2026-10-23,2
+Chana Dal,2026-10-24,2
+Chana Dal,2026-10-25,2
+Chana Dal,2026-10-26,2
+Chana Dal,2026-10-27,2
+Chana Dal,2026-10-28,2
+Chana Dal,2026-10-29,2
+Chana Dal,2026-10-30,2
+Chana Dal,2026-10-31,2
+Chana Dal,2026-11-01,2
+Chana Dal,2026-11-02,2
+Chana Dal,2026-11-03,2
+Chana Dal,2026-11-04,2
+Chana Dal,2026-11-05,2
+Chana Dal,2026-11-06,2
+Chana Dal,2026-11-07,2
+Chana Dal,2026-11-08,2
+Chana Dal,2026-11-09,2
+Chana Dal,2026-11-10,2
+Chana Dal,2026-11-11,2
+Chana Dal,2026-11-12,2
+Chana Dal,2026-11-13,2
+Chana Dal,2026-11-14,2
+Chana Dal,2026-11-15,2
+Chana Dal,2026-11-16,2
+Chana Dal,2026-11-17,2
+Chana Dal,2026-11-18,2
+Namak,2026-10-20,1
+Namak,2026-10-21,1
+Namak,2026-10-22,1
+Namak,2026-10-23,1
+Namak,2026-10-24,1
+Namak,2026-10-25,1
+Namak,2026-10-26,1
+Namak,2026-10-27,1
+Namak,2026-10-28,1
+Namak,2026-10-29,1
+Namak,2026-10-30,1
+Namak,2026-10-31,1
+Namak,2026-11-01,1
+Namak,2026-11-02,1
+Namak,2026-11-03,1
+Namak,2026-11-04,1
+Namak,2026-11-05,1
+Namak,2026-11-06,1
+Namak,2026-11-07,1
+Namak,2026-11-08,1
+Namak,2026-11-09,1
+Namak,2026-11-10,1
+Namak,2026-11-11,1
+Namak,2026-11-12,1
+Namak,2026-11-13,1
+Namak,2026-11-14,1
+Namak,2026-11-15,1
+Namak,2026-11-16,1
+Namak,2026-11-17,1
+Namak,2026-11-18,1
+Sunflower Tel,2026-10-20,4
+Sunflower Tel,2026-10-21,4
+Sunflower Tel,2026-10-22,5
+Sunflower Tel,2026-10-23,3
+Sunflower Tel,2026-10-24,4
+Sunflower Tel,2026-10-25,4
+Sunflower Tel,2026-10-26,5
+Sunflower Tel,2026-10-27,3
+Sunflower Tel,2026-10-28,3
+Sunflower Tel,2026-10-29,4
+Sunflower Tel,2026-10-30,4
+Sunflower Tel,2026-10-31,4
+Sunflower Tel,2026-11-01,3
+Sunflower Tel,2026-11-02,5
+Sunflower Tel,2026-11-03,4
+Sunflower Tel,2026-11-04,5
+Sunflower Tel,2026-11-05,4
+Sunflower Tel,2026-11-06,3
+Sunflower Tel,2026-11-07,5
+Sunflower Tel,2026-11-08,5
+Sunflower Tel,2026-11-09,5
+Sunflower Tel,2026-11-10,5
+Sunflower Tel,2026-11-11,5
+Sunflower Tel,2026-11-12,3
+Sunflower Tel,2026-11-13,4
+Sunflower Tel,2026-11-14,3
+Sunflower Tel,2026-11-15,4
+Sunflower Tel,2026-11-16,3
+Sunflower Tel,2026-11-17,4
+Sunflower Tel,2026-11-18,5
+Maida,2026-10-20,2
+Maida,2026-10-21,2
+Maida,2026-10-22,2
+Maida,2026-10-23,2
+Maida,2026-10-24,2
+Maida,2026-10-25,2
+Maida,2026-10-26,2
+Maida,2026-10-27,2
+Maida,2026-10-28,2
+Maida,2026-10-29,2
+Maida,2026-10-30,2
+Maida,2026-10-31,2
+Maida,2026-11-01,2
+Maida,2026-11-02,2
+Maida,2026-11-03,2
+Maida,2026-11-04,2
+Maida,2026-11-05,2
+Maida,2026-11-06,2
+Maida,2026-11-07,2
+Maida,2026-11-08,2
+Maida,2026-11-09,2
+Maida,2026-11-10,2
+Maida,2026-11-11,2
+Maida,2026-11-12,2
+Maida,2026-11-13,2
+Maida,2026-11-14,2
+Maida,2026-11-15,2
+Maida,2026-11-16,2
+Maida,2026-11-17,2
+Maida,2026-11-18,2
+Besan,2026-10-20,1
+Besan,2026-10-21,2
+Besan,2026-10-22,2
+Besan,2026-10-23,2
+Besan,2026-10-24,1
+Besan,2026-10-25,2
+Besan,2026-10-26,1
+Besan,2026-10-27,1
+Besan,2026-10-28,2
+Besan,2026-10-29,1
+Besan,2026-10-30,1
+Besan,2026-10-31,2
+Besan,2026-11-01,1
+Besan,2026-11-02,1
+Besan,2026-11-03,2
+Besan,2026-11-04,2
+Besan,2026-11-05,1
+Besan,2026-11-06,1
+Besan,2026-11-07,1
+Besan,2026-11-08,2
+Besan,2026-11-09,2
+Besan,2026-11-10,2
+Besan,2026-11-11,1
+Besan,2026-11-12,1
+Besan,2026-11-13,2
+Besan,2026-11-14,2
+Besan,2026-11-15,2
+Besan,2026-11-16,2
+Besan,2026-11-17,2
+Besan,2026-11-18,1
+Chai Patti,2026-10-20,1
+Chai Patti,2026-10-21,1
+Chai Patti,2026-10-22,1
+Chai Patti,2026-10-23,1
+Chai Patti,2026-10-24,1
+Chai Patti,2026-10-25,1
+Chai Patti,2026-10-26,1
+Chai Patti,2026-10-27,1
+Chai Patti,2026-10-28,1
+Chai Patti,2026-10-29,1
+Chai Patti,2026-10-30,1
+Chai Patti,2026-10-31,1
+Chai Patti,2026-11-01,1
+Chai Patti,2026-11-02,1
+Chai Patti,2026-11-03,1
+Chai Patti,2026-11-04,1
+Chai Patti,2026-11-05,1
+Chai Patti,2026-11-06,1
+Chai Patti,2026-11-07,1
+Chai Patti,2026-11-08,1
+Chai Patti,2026-11-09,1
+Chai Patti,2026-11-10,1
+Chai Patti,2026-11-11,1
+Chai Patti,2026-11-12,1
+Chai Patti,2026-11-13,1
+Chai Patti,2026-11-14,1
+Chai Patti,2026-11-15,1
+Chai Patti,2026-11-16,1
+Chai Patti,2026-11-17,1
+Chai Patti,2026-11-18,1
+Sabun,2026-10-20,12
+Sabun,2026-10-21,10
+Sabun,2026-10-22,12
+Sabun,2026-10-23,10
+Sabun,2026-10-24,8
+Sabun,2026-10-25,8
+Sabun,2026-10-26,9
+Sabun,2026-10-27,12
+Sabun,2026-10-28,11
+Sabun,2026-10-29,12
+Sabun,2026-10-30,12
+Sabun,2026-10-31,9
+Sabun,2026-11-01,9
+Sabun,2026-11-02,8
+Sabun,2026-11-03,11
+Sabun,2026-11-04,12
+Sabun,2026-11-05,10
+Sabun,2026-11-06,11
+Sabun,2026-11-07,8
+Sabun,2026-11-08,12
+Sabun,2026-11-09,12
+Sabun,2026-11-10,12
+Sabun,2026-11-11,12
+Sabun,2026-11-12,12
+Sabun,2026-11-13,8
+Sabun,2026-11-14,11
+Sabun,2026-11-15,9
+Sabun,2026-11-16,12
+Sabun,2026-11-17,12
+Sabun,2026-11-18,12
+Detergent,2026-10-20,3
+Detergent,2026-10-21,3
+Detergent,2026-10-22,3
+Detergent,2026-10-23,2
+Detergent,2026-10-24,4
+Detergent,2026-10-25,4
+Detergent,2026-10-26,3
+Detergent,2026-10-27,3
+Detergent,2026-10-28,3
+Detergent,2026-10-29,3
+Detergent,2026-10-30,3
+Detergent,2026-10-31,3
+Detergent,2026-11-01,2
+Detergent,2026-11-02,3
+Detergent,2026-11-03,3
+Detergent,2026-11-04,4
+Detergent,2026-11-05,4
+Detergent,2026-11-06,3
+Detergent,2026-11-07,3
+Detergent,2026-11-08,3
+Detergent,2026-11-09,4
+Detergent,2026-11-10,3
+Detergent,2026-11-11,4
+Detergent,2026-11-12,2
+Detergent,2026-11-13,4
+Detergent,2026-11-14,3
+Detergent,2026-11-15,4
+Detergent,2026-11-16,3
+Detergent,2026-11-17,2
+Detergent,2026-11-18,3
+Parle-G Biscuit,2026-10-20,17
+Parle-G Biscuit,2026-10-21,14
+Parle-G Biscuit,2026-10-22,16
+Parle-G Biscuit,2026-10-23,15
+Parle-G Biscuit,2026-10-24,17
+Parle-G Biscuit,2026-10-25,19
+Parle-G Biscuit,2026-10-26,13
+Parle-G Biscuit,2026-10-27,17
+Parle-G Biscuit,2026-10-28,11
+Parle-G Biscuit,2026-10-29,18
+Parle-G Biscuit,2026-10-30,15
+Parle-G Biscuit,2026-10-31,20
+Parle-G Biscuit,2026-11-01,20
+Parle-G Biscuit,2026-11-02,16
+Parle-G Biscuit,2026-11-03,14
+Parle-G Biscuit,2026-11-04,12
+Parle-G Biscuit,2026-11-05,16
+Parle-G Biscuit,2026-11-06,14
+Parle-G Biscuit,2026-11-07,16
+Parle-G Biscuit,2026-11-08,21
+Parle-G Biscuit,2026-11-09,17
+Parle-G Biscuit,2026-11-10,14
+Parle-G Biscuit,2026-11-11,14
+Parle-G Biscuit,2026-11-12,14
+Parle-G Biscuit,2026-11-13,14
+Parle-G Biscuit,2026-11-14,16
+Parle-G Biscuit,2026-11-15,15
+Parle-G Biscuit,2026-11-16,14
+Parle-G Biscuit,2026-11-17,18
+Parle-G Biscuit,2026-11-18,16
+Maggi,2026-10-20,14
+Maggi,2026-10-21,13
+Maggi,2026-10-22,11
+Maggi,2026-10-23,12
+Maggi,2026-10-24,11
+Maggi,2026-10-25,13
+Maggi,2026-10-26,12
+Maggi,2026-10-27,12
+Maggi,2026-10-28,13
+Maggi,2026-10-29,12
+Maggi,2026-10-30,12
+Maggi,2026-10-31,12
+Maggi,2026-11-01,14
+Maggi,2026-11-02,14
+Maggi,2026-11-03,14
+Maggi,2026-11-04,10
+Maggi,2026-11-05,10
+Maggi,2026-11-06,12
+Maggi,2026-11-07,15
+Maggi,2026-11-08,13
+Maggi,2026-11-09,14
+Maggi,2026-11-10,14
+Maggi,2026-11-11,13
+Maggi,2026-11-12,10
+Maggi,2026-11-13,10
+Maggi,2026-11-14,11
+Maggi,2026-11-15,13
+Maggi,2026-11-16,12
+Maggi,2026-11-17,14
+Maggi,2026-11-18,9
+Lays Chips,2026-10-20,8
+Lays Chips,2026-10-21,9
+Lays Chips,2026-10-22,7
+Lays Chips,2026-10-23,9
+Lays Chips,2026-10-24,14
+Lays Chips,2026-10-25,13
+Lays Chips,2026-10-26,9
+Lays Chips,2026-10-27,6
+Lays Chips,2026-10-28,9
+Lays Chips,2026-10-29,9
+Lays Chips,2026-10-30,6
+Lays Chips,2026-10-31,14
+Lays Chips,2026-11-01,12
+Lays Chips,2026-11-02,10
+Lays Chips,2026-11-03,8
+Lays Chips,2026-11-04,6
+Lays Chips,2026-11-05,7
+Lays Chips,2026-11-06,9
+Lays Chips,2026-11-07,14
+Lays Chips,2026-11-08,17
+Lays Chips,2026-11-09,9
+Lays Chips,2026-11-10,10
+Lays Chips,2026-11-11,8
+Lays Chips,2026-11-12,10
+Lays Chips,2026-11-13,10
+Lays Chips,2026-11-14,15
+Lays Chips,2026-11-15,16
+Lays Chips,2026-11-16,8
+Lays Chips,2026-11-17,9
+Lays Chips,2026-11-18,8
+Cold Drink,2026-10-20,7
+Cold Drink,2026-10-21,7
+Cold Drink,2026-10-22,6
+Cold Drink,2026-10-23,5
+Cold Drink,2026-10-24,9
+Cold Drink,2026-10-25,12
+Cold Drink,2026-10-26,7
+Cold Drink,2026-10-27,6
+Cold Drink,2026-10-28,6
+Cold Drink,2026-10-29,5
+Cold Drink,2026-10-30,5
+Cold Drink,2026-10-31,10
+Cold Drink,2026-11-01,10
+Cold Drink,2026-11-02,5
+Cold Drink,2026-11-03,6
+Cold Drink,2026-11-04,5
+Cold Drink,2026-11-05,5
+Cold Drink,2026-11-06,7
+Cold Drink,2026-11-07,12
+Cold Drink,2026-11-08,8
+Cold Drink,2026-11-09,6
+Cold Drink,2026-11-10,6
+Cold Drink,2026-11-11,6
+Cold Drink,2026-11-12,5
+Cold Drink,2026-11-13,6
+Cold Drink,2026-11-14,13
+Cold Drink,2026-11-15,11
+Cold Drink,2026-11-16,7
+Cold Drink,2026-11-17,7
+Cold Drink,2026-11-18,7
+Maachis,2026-10-20,0
+Maachis,2026-10-21,0
+Maachis,2026-10-22,0
+Maachis,2026-10-23,0
+Maachis,2026-10-24,0
+Maachis,2026-10-25,0
+Maachis,2026-10-26,0
+Maachis,2026-10-27,0
+Maachis,2026-10-28,0
+Maachis,2026-10-29,0
+Maachis,2026-10-30,0
+Maachis,2026-10-31,0
+Maachis,2026-11-01,0
+Maachis,2026-11-02,0
+Maachis,2026-11-03,0
+Maachis,2026-11-04,0
+Maachis,2026-11-05,0
+Maachis,2026-11-06,0
+Maachis,2026-11-07,0
+Maachis,2026-11-08,0
+Maachis,2026-11-09,0
+Maachis,2026-11-10,0
+Maachis,2026-11-11,0
+Maachis,2026-11-12,0
+Maachis,2026-11-13,0
+Maachis,2026-11-14,0
+Maachis,2026-11-15,0
+Maachis,2026-11-16,0
+Maachis,2026-11-17,0
+Maachis,2026-11-18,0
+Agarbatti,2026-10-20,2
+Agarbatti,2026-10-21,2
+Agarbatti,2026-10-22,2
+Agarbatti,2026-10-23,2
+Agarbatti,2026-10-24,2
+Agarbatti,2026-10-25,2
+Agarbatti,2026-10-26,2
+Agarbatti,2026-10-27,2
+Agarbatti,2026-10-28,2
+Agarbatti,2026-10-29,2
+Agarbatti,2026-10-30,2
+Agarbatti,2026-10-31,2
+Agarbatti,2026-11-01,2
+Agarbatti,2026-11-02,2
+Agarbatti,2026-11-03,2
+Agarbatti,2026-11-04,2
+Agarbatti,2026-11-05,2
+Agarbatti,2026-11-06,2
+Agarbatti,2026-11-07,2
+Agarbatti,2026-11-08,2
+Agarbatti,2026-11-09,2
+Agarbatti,2026-11-10,2
+Agarbatti,2026-11-11,2
+Agarbatti,2026-11-12,2
+Agarbatti,2026-11-13,2
+Agarbatti,2026-11-14,2
+Agarbatti,2026-11-15,2
+Agarbatti,2026-11-16,2
+Agarbatti,2026-11-17,2
+Agarbatti,2026-11-18,2
+Toothpaste,2026-10-20,3
+Toothpaste,2026-10-21,3
+Toothpaste,2026-10-22,3
+Toothpaste,2026-10-23,3
+Toothpaste,2026-10-24,4
+Toothpaste,2026-10-25,4
+Toothpaste,2026-10-26,3
+Toothpaste,2026-10-27,2
+Toothpaste,2026-10-28,2
+Toothpaste,2026-10-29,3
+Toothpaste,2026-10-30,4
+Toothpaste,2026-10-31,3
+Toothpaste,2026-11-01,4
+Toothpaste,2026-11-02,3
+Toothpaste,2026-11-03,3
+Toothpaste,2026-11-04,3
+Toothpaste,2026-11-05,4
+Toothpaste,2026-11-06,3
+Toothpaste,2026-11-07,3
+Toothpaste,2026-11-08,3
+Toothpaste,2026-11-09,2
+Toothpaste,2026-11-10,3
+Toothpaste,2026-11-11,3
+Toothpaste,2026-11-12,3
+Toothpaste,2026-11-13,3
+Toothpaste,2026-11-14,4
+Toothpaste,2026-11-15,3
+Toothpaste,2026-11-16,3
+Toothpaste,2026-11-17,3
+Toothpaste,2026-11-18,2
+Shampoo Sachet,2026-10-20,0
+Shampoo Sachet,2026-10-21,0
+Shampoo Sachet,2026-10-22,0
+Shampoo Sachet,2026-10-23,0
+Shampoo Sachet,2026-10-24,0
+Shampoo Sachet,2026-10-25,0
+Shampoo Sachet,2026-10-26,0
+Shampoo Sachet,2026-10-27,0
+Shampoo Sachet,2026-10-28,0
+Shampoo Sachet,2026-10-29,0
+Shampoo Sachet,2026-10-30,0
+Shampoo Sachet,2026-10-31,0
+Shampoo Sachet,2026-11-01,0
+Shampoo Sachet,2026-11-02,0
+Shampoo Sachet,2026-11-03,0
+Shampoo Sachet,2026-11-04,0
+Shampoo Sachet,2026-11-05,0
+Shampoo Sachet,2026-11-06,0
+Shampoo Sachet,2026-11-07,0
+Shampoo Sachet,2026-11-08,0
+Shampoo Sachet,2026-11-09,0
+Shampoo Sachet,2026-11-10,0
+Shampoo Sachet,2026-11-11,0
+Shampoo Sachet,2026-11-12,0
+Shampoo Sachet,2026-11-13,0
+Shampoo Sachet,2026-11-14,0
+Shampoo Sachet,2026-11-15,0
+Shampoo Sachet,2026-11-16,0
+Shampoo Sachet,2026-11-17,0
+Shampoo Sachet,2026-11-18,0

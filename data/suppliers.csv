@@ -1,0 +1,22 @@
+supplier,item,unit,price_per_unit,pack_size,lead_time_days
+Sharma Kirana Wholesale,Atta,kg,45,10,1
+Sharma Kirana Wholesale,Chini,kg,44,10,2
+Sharma Kirana Wholesale,Chawal,kg,38,25,2
+Sharma Kirana Wholesale,Toor Dal,kg,140,10,2
+Sharma Kirana Wholesale,Chana Dal,kg,90,10,2
+Sharma Kirana Wholesale,Namak,kg,20,10,2
+Sharma Kirana Wholesale,Sunflower Tel,litre,150,15,3
+Sharma Kirana Wholesale,Maida,kg,42,10,1
+Sharma Kirana Wholesale,Besan,kg,85,10,2
+Gupta General Stores,Chai Patti,kg,320,5,2
+Gupta General Stores,Sabun,piece,35,12,2
+Gupta General Stores,Detergent,kg,60,5,2
+Gupta General Stores,Parle-G Biscuit,piece,10,100,3
+Gupta General Stores,Maggi,piece,14,48,3
+Gupta General Stores,Lays Chips,piece,20,48,3
+Gupta General Stores,Cold Drink,bottle,40,24,3
+Sharma Kirana Wholesale,Maachis,piece,1,100,5
+Gupta General Stores,Agarbatti,piece,25,50,4
+Gupta General Stores,Toothpaste,piece,55,24,3
+Sharma Kirana Wholesale,Shampoo Sachet,piece,2,100,5
+Gupta General Stores,Chini,kg,46,10,1
