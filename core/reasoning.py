@@ -153,38 +153,45 @@ def validate_and_repair(result, plan, stock):
         rejections.append(f"cash_summary mismatch, overwritten with computed values: {plan['cash_summary']}")
     result["cash_summary"] = plan["cash_summary"]
 
-    # reorder_list: every item must exist in the computed plan with matching numbers.
-    dead_names = {d["item"] for d in plan["dead_stock_items"]}
-    plan_reorder_names = {c["item"] for c in plan["reorder_list"]}
-    repaired_list = []
-    for entry in result.get("reorder_list") or []:
-        name = entry.get("item")
-        if name in dead_names:
-            rejections.append(f"model put dead-stock item '{name}' in reorder_list; removed")
-            continue
-        truth = _reorder_item_by_name(plan["reorder_list"], name)
-        if truth is None:
-            rejections.append(f"model invented reorder item '{name}' not in computed plan; removed")
-            continue
-        reason = str(entry.get("reason", ""))[:120]
-        repaired_list.append({
-            "item": truth["item"], "qty": truth["qty"], "unit": truth["unit"],
-            "cost": truth["cost"], "reason": reason, "urgency": truth["urgency"], "fits_cash": True,
-        })
-    missing_from_model = plan_reorder_names - {e["item"] for e in repaired_list}
-    for name in missing_from_model:
-        truth = _reorder_item_by_name(plan["reorder_list"], name)
-        rejections.append(f"model dropped computed reorder item '{name}'; re-added")
-        repaired_list.append({
-            "item": truth["item"], "qty": truth["qty"], "unit": truth["unit"],
-            "cost": truth["cost"], "reason": f"{truth['days_left']} days of stock left",
-            "urgency": truth["urgency"], "fits_cash": True,
-        })
-    total_cost = sum(e["cost"] for e in repaired_list)
-    if total_cost > plan["cash_summary"]["available"]:
-        rejections.append("repaired reorder_list still exceeds available cash; truncating")
-        repaired_list = plan["reorder_list"]
-    result["reorder_list"] = repaired_list
+    # reorder_list only applies to intent == "reorder_query". For
+    # stock_update / other, the computed plan is not the point of the
+    # reply, so an empty list is correct and must not be "repaired" back in.
+    if result.get("intent") == "reorder_query":
+        dead_names = {d["item"] for d in plan["dead_stock_items"]}
+        plan_reorder_names = {c["item"] for c in plan["reorder_list"]}
+        repaired_list = []
+        for entry in result.get("reorder_list") or []:
+            name = entry.get("item")
+            if name in dead_names:
+                rejections.append(f"model put dead-stock item '{name}' in reorder_list; removed")
+                continue
+            truth = _reorder_item_by_name(plan["reorder_list"], name)
+            if truth is None:
+                rejections.append(f"model invented reorder item '{name}' not in computed plan; removed")
+                continue
+            reason = str(entry.get("reason", ""))[:120]
+            repaired_list.append({
+                "item": truth["item"], "qty": truth["qty"], "unit": truth["unit"],
+                "cost": truth["cost"], "reason": reason, "urgency": truth["urgency"], "fits_cash": True,
+            })
+        missing_from_model = plan_reorder_names - {e["item"] for e in repaired_list}
+        for name in missing_from_model:
+            truth = _reorder_item_by_name(plan["reorder_list"], name)
+            rejections.append(f"model dropped computed reorder item '{name}'; re-added")
+            repaired_list.append({
+                "item": truth["item"], "qty": truth["qty"], "unit": truth["unit"],
+                "cost": truth["cost"], "reason": f"{truth['days_left']} days of stock left",
+                "urgency": truth["urgency"], "fits_cash": True,
+            })
+        total_cost = sum(e["cost"] for e in repaired_list)
+        if total_cost > plan["cash_summary"]["available"]:
+            rejections.append("repaired reorder_list still exceeds available cash; truncating")
+            repaired_list = plan["reorder_list"]
+        result["reorder_list"] = repaired_list
+    else:
+        if result.get("reorder_list"):
+            rejections.append(f"intent={result.get('intent')} but model filled reorder_list; cleared")
+        result["reorder_list"] = []
 
     # stock_changes: recompute new_stock in code; never trust the model's arithmetic.
     raw_changes = result.get("stock_changes") or []
